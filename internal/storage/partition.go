@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"github.com/clickhouse-go/math"
+	"log"
 	"strconv"
 	"time"
 )
@@ -12,13 +13,12 @@ type Partition struct {
 	PartitionMeta *PartitionMeta
 	//分区内数据存储
 	CheckSums string
-	Columns   string
-	Count     string
+	Columns   *Columns
+	Count     *PartitionRawCount
 	Primary   Index
 	Bin       []Bin
 	Mark      []Mark
 	Mark2     []Mark2
-	Partition string
 	SkipIndex SkipIndex
 	SkipMark  SkipMark
 }
@@ -45,7 +45,7 @@ func CreatePartitionMeta(minBlockNum, MaxBlockNum int) *PartitionMeta {
 	}
 }
 
-func (pt *PartitionMeta) GetDirectorName() string {
+func (pt *PartitionMeta) ToString() string {
 	if pt == nil {
 		return ""
 	}
@@ -65,6 +65,21 @@ func (pt *PartitionMeta) MergeDirectory(pt1 *PartitionMeta) (pt2 *PartitionMeta)
 	}
 }
 
-func (p *Partition) MergePartition(p1 *Partition) (p2 *Partition) {
-	return &Partition{}
+func (p *Partition) MergePartition(p1 *Partition) *Partition {
+	if p1 == nil {
+		log.Println("p1 is nil!")
+		return &Partition{}
+	}
+	return &Partition{
+		PartitionMeta: p.PartitionMeta.MergeDirectory(p1.PartitionMeta),
+		//CheckSums:     mergeChecksum(p1, p2),
+		Columns: p.Columns.MergeColumns(p1.Columns),
+		Count:   p.Count.MergeCount(p1.Count),
+		//Primary:       mergePrimary(p1, p2),
+		//Bin:           mergeBin(p1, p2),
+		//Mark:          mergeMark(p1, p2),
+		//Mark2:         mergeMark2(p1, p2),
+		//SkipIndex:     mergeSkipIndex(p1, p2),
+		//SkipMark:      mergeSkipMark(p1, p2),
+	}
 }

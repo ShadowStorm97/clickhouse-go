@@ -15,11 +15,11 @@ func TestCreatePartitionMeta(t *testing.T) {
 	AssertEqual(t, partitionMeta.Level, 0)
 }
 
-func TestGetDirectorName(t *testing.T) {
+func TestToString(t *testing.T) {
 	partitionMeta := CreatePartitionMeta(1, 1)
-	Assert(t, len(partitionMeta.GetDirectorName()) >= 14)
-	Assert(t, strings.Contains(partitionMeta.GetDirectorName(), "_"))
-	AssertEqual(t, strings.Count(partitionMeta.GetDirectorName(), "_"), 3)
+	Assert(t, len(partitionMeta.ToString()) >= 14)
+	Assert(t, strings.Contains(partitionMeta.ToString(), "_"))
+	AssertEqual(t, strings.Count(partitionMeta.ToString(), "_"), 3)
 }
 
 func TestMergeDirectory(t *testing.T) {
@@ -36,4 +36,34 @@ func TestMergeDirectory(t *testing.T) {
 }
 
 func TestMergePartition(t *testing.T) {
+	p1 := &Partition{
+		PartitionMeta: CreatePartitionMeta(1, 1),
+		Columns: &Columns{formatVersion: 1, columns: []*ColumnItem{
+			{name: "id", columnType: "UInt32"},
+			{name: "sku_id", columnType: "String"},
+			{name: "total_amount", columnType: "Decimal(16,2)"},
+			{name: "create_time", columnType: "DateTime"},
+		}},
+		Count: &PartitionRawCount{partitionRawCount: 100},
+	}
+	p2 := &Partition{
+		PartitionMeta: CreatePartitionMeta(2, 2),
+		Columns: &Columns{formatVersion: 1, columns: []*ColumnItem{
+			{name: "id", columnType: "UInt32"},
+			{name: "sku_id", columnType: "String"},
+			{name: "total_amount", columnType: "Decimal(16,2)"},
+			{name: "create_time", columnType: "DateTime"},
+		}},
+		Count: &PartitionRawCount{partitionRawCount: 900},
+	}
+	p3 := p1.MergePartition(p2)
+	AssertNotEqual(t, p3, nil)
+	Assert(t, p3.PartitionMeta.PartitionId > 20220801)
+	AssertEqual(t, p3.PartitionMeta.PartitionId, p1.PartitionMeta.PartitionId)
+	AssertEqual(t, p3.PartitionMeta.PartitionId, p2.PartitionMeta.PartitionId)
+	AssertEqual(t, p3.PartitionMeta.MaxBlockNum, 2)
+	AssertEqual(t, p3.PartitionMeta.MinBlockNum, 1)
+	AssertEqual(t, p3.PartitionMeta.Level, 1)
+	AssertEqual(t, p3.Columns, p1.Columns)
+	AssertEqual(t, p3.Count.partitionRawCount, int64(1000))
 }

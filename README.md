@@ -6,7 +6,7 @@ The project is in its early stages.
 
 Todo List:
 
-- [ ] implement `storage` module
+- [ ] implement `storage` module > 30%
 - [ ] implement `write` module
 - [ ] implement `read` module
 - [ ] implement `search` module
