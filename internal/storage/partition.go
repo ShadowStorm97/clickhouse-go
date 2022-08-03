@@ -15,12 +15,12 @@ type Partition struct {
 	CheckSums string
 	Columns   *Columns
 	Count     *PartitionRawCount
-	Primary   Index
-	Bin       []Bin
-	Mark      []Mark
-	Mark2     []Mark2
-	SkipIndex SkipIndex
-	SkipMark  SkipMark
+	Primary   *PrimaryIndex
+	Bin       *BinContainer
+	Mark      *MarkContainer
+	Mark2     *Mark2Container
+	SkipIndex *SkipIndex
+	SkipMark  *SkipMark
 }
 
 type PartitionMeta struct {
@@ -72,14 +72,14 @@ func (p *Partition) MergePartition(p1 *Partition) *Partition {
 	}
 	return &Partition{
 		PartitionMeta: p.PartitionMeta.MergeDirectory(p1.PartitionMeta),
-		//CheckSums:     mergeChecksum(p1, p2),
-		Columns: p.Columns.MergeColumns(p1.Columns),
-		Count:   p.Count.MergeCount(p1.Count),
-		//Primary:       mergePrimary(p1, p2),
-		//Bin:           mergeBin(p1, p2),
-		//Mark:          mergeMark(p1, p2),
-		//Mark2:         mergeMark2(p1, p2),
-		//SkipIndex:     mergeSkipIndex(p1, p2),
-		//SkipMark:      mergeSkipMark(p1, p2),
+		CheckSums:     "",
+		Columns:   p.Columns.MergeColumns(p1.Columns),
+		Count:     p.Count.MergeCount(p1.Count),
+		Primary:   p.Primary.MergePrimary(p1.Primary),
+		Bin:       p.Bin.MergeBinContainer(p1.Bin),
+		Mark:      nil,
+		Mark2:     nil,
+		SkipIndex: &SkipIndex{},
+		SkipMark:  &SkipMark{},
 	}
 }

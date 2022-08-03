@@ -46,6 +46,22 @@ func TestMergePartition(t *testing.T) {
 		}},
 		Count: &PartitionRawCount{partitionRawCount: 100},
 	}
+	bin1 := []*Bin{{[]*CompressBlock{
+		{CompressionMethod: 1, CompressionSize: 10000, UnCompressedSize: 65536, CompressedData: []byte("1")},
+		{CompressionMethod: 1, CompressionSize: 12000, UnCompressedSize: 65536, CompressedData: []byte("2")},
+		{CompressionMethod: 1, CompressionSize: 8000, UnCompressedSize: 65536, CompressedData: []byte("3")},
+	}}}
+	p1.Bin = &BinContainer{BaseFilePointer: "/usr/clickhouse-go/" + p1.PartitionMeta.ToString() + "/", Bin: bin1}
+	items1 := []*SparseIndexItem{{
+		Val: 1,
+		Mark: &MarkItem{
+			Bin:                 bin1[0],
+			CompressBlockOffset: 0,
+			ExtractBlockOffset:  0,
+		}},
+	}
+	p1.Primary = &PrimaryIndex{SparseIndexItem: items1}
+
 	p2 := &Partition{
 		PartitionMeta: CreatePartitionMeta(2, 2),
 		Columns: &Columns{formatVersion: 1, columns: []*ColumnItem{
@@ -56,6 +72,21 @@ func TestMergePartition(t *testing.T) {
 		}},
 		Count: &PartitionRawCount{partitionRawCount: 900},
 	}
+	bin2 := []*Bin{{[]*CompressBlock{
+		{CompressionMethod: 1, CompressionSize: 13000, UnCompressedSize: 65536, CompressedData: []byte("4")},
+		{CompressionMethod: 1, CompressionSize: 15000, UnCompressedSize: 65536, CompressedData: []byte("5")},
+		{CompressionMethod: 1, CompressionSize: 6000, UnCompressedSize: 65536, CompressedData: []byte("6")},
+	}}}
+	p2.Bin = &BinContainer{BaseFilePointer: "/usr/clickhouse-go/" + p2.PartitionMeta.ToString() + "/", Bin: bin2}
+	items2 := []*SparseIndexItem{{
+		Val: 4,
+		Mark: &MarkItem{
+			Bin:                 bin2[0],
+			CompressBlockOffset: 1,
+			ExtractBlockOffset:  0,
+		}},
+	}
+	p2.Primary = &PrimaryIndex{SparseIndexItem: items2}
 	p3 := p1.MergePartition(p2)
 	AssertNotEqual(t, p3, nil)
 	Assert(t, p3.PartitionMeta.PartitionId > 20220801)
@@ -66,4 +97,8 @@ func TestMergePartition(t *testing.T) {
 	AssertEqual(t, p3.PartitionMeta.Level, 1)
 	AssertEqual(t, p3.Columns, p1.Columns)
 	AssertEqual(t, p3.Count.partitionRawCount, int64(1000))
+	Assert(t, len([]rune(p3.Bin.BaseFilePointer)) >= 34)
+	AssertEqual(t, len(p3.Primary.SparseIndexItem), 2)
+	AssertEqual(t, p3.Primary.SparseIndexItem[0].Val, 1)
+	AssertEqual(t, p3.Primary.SparseIndexItem[1].Val, 4)
 }
